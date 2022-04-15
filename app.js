@@ -7,6 +7,14 @@ const exphbs = require('express-handlebars');
 const Handlebars = require('handlebars')
 const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-access')
 
+// INITIALIZE BODY-PARSER AND ADD IT TO APP
+const bodyParser = require('body-parser');
+
+// The following line must appear AFTER const app = express() and before your routes!
+app.use(bodyParser.urlencoded({ extended: true }));
+
+const models = require('./db/models');
+
 // Use "main" as our default layout
 app.engine('handlebars', exphbs.engine({ defaultLayout: 'main', handlebars: allowInsecurePrototypeAccess(Handlebars) }));
 // Use handlebars to render
@@ -21,7 +29,23 @@ var events = [
 
 // INDEX
 app.get('/', (req, res) => {
-  res.render('events-index', { events: events });
+  models.Event.findAll({ order: [['createdAt', 'DESC']] }).then(events => {
+    res.render('events-index', { events: events });
+  })
+})
+
+// NEW
+app.get('/events/new', (req, res) => {
+  res.render('events-new', {});
+})
+
+// CREATE
+app.post('/events', (req, res) => {
+  models.Event.create(req.body).then(event => {
+    res.redirect(`/`);
+  }).catch((err) => {
+    console.log(err)
+  });
 })
 
 // Choose a port to listen on
